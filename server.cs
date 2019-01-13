@@ -22,15 +22,15 @@ namespace AI
             while (true)
             {
                 TcpClient client = listener.AcceptTcpClient();
-                Console.WriteLine("request incoming...");
 
                 NetworkStream stream = client.GetStream();
                 string request = toString(stream);
 
                 string input = request.Substring(request.IndexOf("Connection: keep-alive") + "Connection: keep-alive".Length).Replace(System.Environment.NewLine, "");
-                if (input.Contains("won"))
+                Console.WriteLine("request: " + input);
+                if (input.Contains("computerwon"))
                 {
-                    Console.WriteLine("Computer Won!");
+                    Console.WriteLine("Game Over ------ Computer Won!");
                     decimal[] outputs = new decimal[inputs.Count];
                     for (int i = 0; i < outputs.Length; i++)
                     {
@@ -39,9 +39,9 @@ namespace AI
                     network.train(inputs, outputs, 100);
                     inputs.Clear();
                 }
-                else if (input.Contains("lost"))
+                else if (input.Contains("computerlost"))
                 {
-                    Console.WriteLine("Computer Lost!");
+                    Console.WriteLine("Game Over ------ Computer Lost!");
                     decimal[] outputs = new decimal[inputs.Count];
                     for (int i = 0; i < outputs.Length; i++) {
                         outputs[i] = 0;
@@ -63,10 +63,10 @@ namespace AI
                     decimal accuracy;
                     for (int i = 0; i < nums.Length; i++)
                     {
-                        if (nums[i] == 0)
+                        if (nums[i] == (decimal).5)
                         {
                             decimal[] temp = (decimal[])nums.Clone();
-                            temp[i] = -1;
+                            temp[i] = 0;
                             accuracy = network.run(temp);
 
                             if (accuracy > bestAccuracy)
@@ -91,6 +91,7 @@ namespace AI
 
                     stream.Close();
                     client.Close();
+                    Console.WriteLine("Made move.");
                 }
             }
         }

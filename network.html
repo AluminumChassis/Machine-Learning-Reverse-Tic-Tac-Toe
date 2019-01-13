@@ -6,10 +6,11 @@
 </head>
 <style type="text/css">
     body {
-        background:linear-gradient(30deg,rgb(200,200,200),rgb(100,100,100))
+        background: linear-gradient(125deg,rgb(60,210,90),rgb(50,91,200));
     }
     *{
         font-size: 5vh;
+        font-family: "Arial", Gadget, sans-serif
     }
     #game {
         width: 40vw; 
@@ -41,26 +42,36 @@
 </style>
 <body>
     <div id="game">
-        <button id="0" onclick="button(0)" class="dark"> </button>
-        <button id="1" onclick="button(1)" class="light"> </button>
-        <button id="2" onclick="button(2)" class="dark"> </button>
+        <div style="float: left; display: block">
+            <button id="0" onclick="button(0)" class="dark"> </button>
+            <button id="1" onclick="button(1)" class="light"> </button>
+            <button id="2" onclick="button(2)" class="dark"> </button>
 
-        <button id="3" onclick="button(3)" class="light"> </button>
-        <button id="4" onclick="button(4)" class="dark"> </button>
-        <button id="5" onclick="button(5)" class="light"> </button>
+            <button id="3" onclick="button(3)" class="light"> </button>
+            <button id="4" onclick="button(4)" class="dark"> </button>
+            <button id="5" onclick="button(5)" class="light"> </button>
 
-        <button id="6" onclick="button(6)" class="dark"> </button>
-        <button id="7" onclick="button(7)" class="light"> </button>
-        <button id="8" onclick="button(8)" class="dark"> </button>
-        <div id="indicator">Your Turn</div>
+            <button id="6" onclick="button(6)" class="dark"> </button>
+            <button id="7" onclick="button(7)" class="light"> </button>
+            <button id="8" onclick="button(8)" class="dark"> </button>
+            <div id="indicator">Your Turn</div>
+        </div>
+        <div style="position: fixed; right: 10%">
+            <div id="wins">W: 0</div>
+            <div id="draws">D: 0</div>
+            <div id="losses">L: 0</div>
+            <button onclick="restart()" id="restart" style="display:none; height: 10%; margin-top: 40%">Restart</button>
+        </div>
     </div>
 </body>
 <script type="text/javascript">
+var wins = [0,0,0];
 var playerTurn = true;
-var board = [0,0,0,0,0,0,0,0,0];
+var board = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
 var turns = 0;
 var xhttp = new XMLHttpRequest();
 var link = "http://localhost:3000/";
+var ready = true;
 xhttp.onreadystatechange = async function() {
 	if (this.readyState == 4 && this.status == 200) {
 		console.log(this.responseText);
@@ -70,20 +81,21 @@ xhttp.onreadystatechange = async function() {
         turns++;
         updateHtml();
         updateGame();
+        ready=true;
 	}
-};
+}
 async function AI() {
-    await sleep(500)
     xhttp.open("POST", link, true);
     xhttp.setRequestHeader("Content-Type", "text/plain");
     xhttp.send(board.join(","));
+    ready=false;
 }
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 function button(num) {
     if(playerTurn) {
-        if(board[num]==0){
+        if(board[num]==.5){
             board[num]=1
             updateHtml();
             document.getElementById("indicator").innerText="AI's Turn"
@@ -94,6 +106,7 @@ function button(num) {
                 AI()
             }
             if (turns==9 && document.getElementById("indicator").innerText=="AI's Turn") {
+                wins[1]++
                 reward(1)
             }
         }
@@ -101,7 +114,7 @@ function button(num) {
 }
 function updateHtml() {
     for (var i = board.length - 1; i >= 0; i--) {
-        document.getElementById(i).innerText=board[i]>0?"X":board[i]>-1?"":"O"
+        document.getElementById(i).innerText=board[i]>.5?"X":board[i]>0?" ":"O"
     }
 }
 function updateGame(){
@@ -125,19 +138,29 @@ function updateGame(){
     }
 }
 function compare(n,n1,n2) {
-    return board[n]==board[n1] && board[n1]==board[n2] && board[n]!=0
+    return board[n]==board[n1] && board[n1]==board[n2] && board[n]!=.5
 }
 async function reward(bool) {
+    while (!ready) {
+        await(sleep(100))
+    }
     var x = new XMLHttpRequest();
     x.open("POST", link, true);
     x.setRequestHeader("Content-Type", "text/plain");
     if(bool>0) {
         console.log("computer wins")
-        x.send("won");
+        x.send("computerwon");
     } else {
         console.log("computer loses")
-        x.send("lost");
+        x.send("computerlost");
     }
+    document.getElementById("restart").style.display="block"
+    document.getElementById("wins").innerText="W: "+ wins[0]
+    document.getElementById("draws").innerText="D: "+ wins[1]
+    document.getElementById("losses").innerText="L: "+ wins[2]
+}
+function restart() {
+     location.reload(); 
 }
 function win(player){
     if(player==1){
@@ -145,6 +168,9 @@ function win(player){
     } else {
         document.getElementById("indicator").innerText="You Win"
     }
+    console.log(player)
+
+    wins[2*player]++
     console.log(player)
     reward(player);
     playerTurn = false;
